@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS managers (
 );
 
 INSERT INTO managers (id, name, email, password, phone) VALUES 
-    (1, 'Sarth Vaghela', 'sarth@eventease.com', 'Sarth123', '9876543210'),
-    (2, 'Mahir Kadivar', 'mahir@eventease.com', 'mahir123', '9876543211')
+    (1, 'Sarth Vaghela', 'sarth@eventease.com', '$2y$10$GviwwNA4wqfTXFLOb3OV/.oV.NzVajq.zriyO3iPdBp9ckpzPypaK', '9876543210'),
+    (2, 'Mahir Kadivar', 'mahir@eventease.com', '$2y$10$TUXIt8chpm8Nixzvy0zJdOAnVg9BEI6nT/Jc7Fl7qeC1oYIXNzQ5i', '9876543211')
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     email = VALUES(email),

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS events (
     price DECIMAL(10,2) NOT NULL,
     manager_id INT,
     image_path VARCHAR(500),
-    status ENUM('active', 'inactive', 'cancelled') DEFAULT 'active',
+    status ENUM('Planning', 'Active', 'Completed', 'Cancelled', 'active', 'inactive') DEFAULT 'Planning',
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

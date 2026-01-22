@@ -63,12 +63,84 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'users') && tableExists
     }
 }
 
-$operationsActivity = [
-    ["text" => "Cleared vendor invoice for Gala dinner", "time" => "2 min ago"],
-    ["text" => "New booking request from Nisha for Wedding", "time" => "15 min ago"],
-    ["text" => "Manager Aman updated NYE Concert timeline", "time" => "38 min ago"],
-    ["text" => "Feedback from Priya marked as resolved", "time" => "1 hr ago"],
-];
+// Helper to get time elapsed
+function time_elapsed_string($datetime, $full = false) {
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
+
+    $string = array(
+        'y' => 'year',
+        'm' => 'month',
+        'w' => 'week',
+        'd' => 'day',
+        'h' => 'hour',
+        'i' => 'minute',
+        's' => 'second',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+        } else {
+            unset($string[$k]);
+        }
+    }
+
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' ago' : 'just now';
+}
+
+$operationsActivity = [];
+
+// Fetch real activity from DB
+if (tableExists($conn, 'bookings') && tableExists($conn, 'payments') && tableExists($conn, 'events') && tableExists($conn, 'users')) {
+    $unionQuery = "
+        (SELECT CONCAT('New booking #', b.booking_code, ' by ', IFNULL(u.name, 'Guest')) as text, b.created_at as created_at 
+         FROM bookings b LEFT JOIN users u ON b.user_id = u.id)
+        UNION ALL
+        (SELECT CONCAT('Payment of ₹', p.amount, ' received from ', IFNULL(u.name, 'User')) as text, p.created_at as created_at 
+         FROM payments p LEFT JOIN users u ON p.user_id = u.id)
+        UNION ALL
+        (SELECT CONCAT('New Event \"', e.title, '\" created') as text, e.created_at as created_at 
+         FROM events e)
+        ORDER BY created_at DESC LIMIT 6
+    ";
+    
+    // Check if feedback exists before adding to union to avoid errors if table missing
+    if (tableExists($conn, 'feedback')) {
+        $unionQuery = "
+            (SELECT CONCAT('New booking #', b.booking_code, ' by ', IFNULL(u.name, 'Guest')) as text, b.created_at as created_at 
+             FROM bookings b LEFT JOIN users u ON b.user_id = u.id)
+            UNION ALL
+            (SELECT CONCAT('Payment of ₹', p.amount, ' received from ', IFNULL(u.name, 'User')) as text, p.created_at as created_at 
+             FROM payments p LEFT JOIN users u ON p.user_id = u.id)
+            UNION ALL
+            (SELECT CONCAT('New Event \"', e.title, '\" created') as text, e.created_at as created_at 
+             FROM events e)
+            UNION ALL
+            (SELECT CONCAT('New ', f.rating, '-star feedback from ', IFNULL(u.name, 'User')) as text, f.created_at as created_at
+             FROM feedback f LEFT JOIN users u ON f.user_id = u.id)
+            ORDER BY created_at DESC LIMIT 6
+        ";
+    }
+
+    $actResult = $conn->query($unionQuery);
+    if ($actResult) {
+        while ($row = $actResult->fetch_assoc()) {
+            $operationsActivity[] = [
+                "text" => $row['text'],
+                "time" => time_elapsed_string($row['created_at'])
+            ];
+        }
+    }
+}
+// Fallback if empty (new install)
+if (empty($operationsActivity)) {
+    $operationsActivity[] = ["text" => "System initialized", "time" => "Just now"];
+}
 ?>
 
 <!DOCTYPE html>

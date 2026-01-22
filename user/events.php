@@ -31,7 +31,7 @@ if (tableExists($conn, 'events')) {
                COUNT(b.id) as booking_count
                FROM events e
                LEFT JOIN bookings b ON e.id = b.event_id
-               WHERE (e.status IS NULL OR e.status IN ('Planning','Active'))
+                WHERE (e.status IS NULL OR e.status NOT IN ('Cancelled', 'Inactive', 'cancelled', 'inactive'))
                AND (e.event_date >= CURDATE())
                GROUP BY e.id";
     $types  = '';

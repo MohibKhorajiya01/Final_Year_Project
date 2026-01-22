@@ -45,6 +45,7 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
     $query = "SELECT b.*, 
                      b.booking_code as transaction_id,
                      b.total_amount as amount,
+                     b.status as booking_status,
                      b.payment_status as status,
                      b.preferred_date as event_date,
                      u.name AS user_name,
@@ -348,9 +349,9 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
                         <tr>
                             <th>Transaction ID</th>
                             <th>User</th>
-                            <th>Event</th>
                             <th>Amount</th>
-                            <th>Status</th>
+                            <th>Booking Status</th>
+                            <th>Payment Status</th>
                             <th>Event Date</th>
                             <th>Date</th>
                             <th>Actions</th>
@@ -376,8 +377,22 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td>
                                     <strong>₹<?= number_format($payment['amount'] ?? 0, 2); ?></strong>
+                                </td>
+                                <td>
+                                    <?php
+                                    $bkStatus = $payment['booking_status'] ?? 'pending';
+                                    $bkClass = match(strtolower($bkStatus)) {
+                                        'approved' => 'bg-success',
+                                        'completed' => 'bg-success',
+                                        'pending' => 'bg-warning',
+                                        'cancelled' => 'bg-danger',
+                                        default => 'bg-secondary'
+                                    };
+                                    ?>
+                                    <span class="badge badge-custom <?= $bkClass; ?>">
+                                        <?= ucfirst(htmlspecialchars($bkStatus)); ?>
+                                    </span>
                                 </td>
                                 <td>
                                     <?php
