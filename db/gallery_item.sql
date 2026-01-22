@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS gallery_items (
     is_featured TINYINT(1) NOT NULL DEFAULT 0,
     created_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT NULL,
     FOREIGN KEY (event_id) REFERENCES events(id),
     FOREIGN KEY (created_by) REFERENCES admins(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

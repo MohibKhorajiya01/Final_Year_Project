@@ -517,23 +517,12 @@ $imagePath = $event && !empty($event['image_path'])
 
         // Enhanced email validation
         const emailInput = document.getElementById('email');
-        /*
-        emailInput.addEventListener('blur', function() {
-            const email = this.value.trim();
-            const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-            
-            if (email && !emailPattern.test(email)) {
-                this.setCustomValidity('Please enter a valid email address (e.g., name@example.com)');
-                this.classList.add('is-invalid');
-            } else {
-                this.setCustomValidity('');
+        // Enhanced email validation - Logic removed as per request to rely on browser validation
+        if (emailInput) {
+            emailInput.addEventListener('input', function() {
                 this.classList.remove('is-invalid');
-            }
-        });
-        
-        emailInput.addEventListener('input', function() {
-            this.classList.remove('is-invalid');
-        });
+            });
+        }
     });
 </script>
 

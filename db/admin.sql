@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS admins (
 
 -- Insert sample admin data
 INSERT INTO admins (name, email, password) VALUES 
-('Admin User', 'admin@eventease.com', 'admin123'),
-('Super Admin', 'superadmin@eventease.com', 'superadmin123');
+('Admin User', 'admin@eventease.com', '$2y$10$9ay3QQMGpjOPl6PY1dPIEuKXgPTv9Z9GhHK3FBlGJ9RaMmmIGnEge'),
+('Super Admin', 'superadmin@eventease.com', '$2y$10$tWF6Nl5yRihT.WXyDAwAZetlbNgoEhOoei8afBm8ebaynchAtxbmC');

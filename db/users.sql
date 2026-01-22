@@ -5,7 +5,7 @@ CREATE TABLE users (
     phone VARCHAR(15) NOT NULL,
     password VARCHAR(255) NOT NULL,
     otp VARCHAR(10),
-    status TINYINT(1) DEFAULT 0,
+    status TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -20,5 +20,5 @@ ON DUPLICATE KEY UPDATE
     email = VALUES(email),
     phone = VALUES(phone),
     password = VALUES(password),
-    status = VALUES(status);
+    status = 1;
 
