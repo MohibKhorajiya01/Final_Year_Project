@@ -1,0 +1,12 @@
+# robots.txt for EventEase
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: http://localhost/Final_Year_Project/user/
+
+# Disallow admin and manager panels
+Disallow: /admin/
+Disallow: /manager/
+Disallow: /backend/
+

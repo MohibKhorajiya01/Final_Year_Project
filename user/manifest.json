@@ -1,0 +1,23 @@
+{
+  "name": "EventEase - Event Booking & Management System",
+  "short_name": "EventEase",
+  "description": "EventEase - Your complete event booking and management solution. Book weddings, corporate events, parties, and more.",
+  "start_url": "/Final_Year_Project/user/",
+  "display": "standalone",
+  "background_color": "#5a2ca0",
+  "theme_color": "#5a2ca0",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/1.logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/1.logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
