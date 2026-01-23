@@ -275,7 +275,7 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
 
     <?php if (isset($_GET['updated'])): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ✅ Payment status updated successfully!
+            Payment status updated successfully!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>

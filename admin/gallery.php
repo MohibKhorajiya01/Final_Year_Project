@@ -467,19 +467,15 @@ $latestUpload = fetchScalar($conn, "SELECT DATE_FORMAT(created_at, '%d %b %Y %h:
                 <input type="text" name="title" class="form-control" required placeholder="Sunset Sangeet, Corporate Gala...">
             </div>
             <div class="col-md-3">
-                <label class="form-label">Link Event <span class="required-star">*</span></label>
-                <select name="event_id" class="form-select" required>
+                <label class="form-label">Link Event</label>
+                <select name="event_id" class="form-select">
                     <option value="">None</option>
                     <?php foreach ($eventsList as $event): ?>
                         <option value="<?= $event['id']; ?>"><?= htmlspecialchars($event['title']); ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-2">
-                <label class="form-label">Shoot Date <span class="required-star">*</span></label>
-                <input type="date" name="shoot_date" class="form-control" required>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-5">
                 <label class="form-label">Status <span class="required-star">*</span></label>
                 <select name="status" class="form-select" required>
                     <?php foreach ($statuses as $status): ?>
@@ -487,19 +483,15 @@ $latestUpload = fetchScalar($conn, "SELECT DATE_FORMAT(created_at, '%d %b %Y %h:
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <label class="form-label">Description <span class="required-star">*</span></label>
                 <textarea name="description" class="form-control" rows="2" placeholder="Add short story or highlight about this image." required></textarea>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Tags <span class="required-star">*</span></label>
-                <input type="text" name="tags" class="form-control" placeholder="wedding, decor, backstage" required>
-                <small class="text-muted">Comma separated keywords.</small>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">Image <span class="required-star">*</span></label>
                 <input type="file" name="image" class="form-control" accept="image/*" required>
             </div>
+
             <div class="col-12 d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-cloud-upload-alt"></i> Save Item

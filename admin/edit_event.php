@@ -182,6 +182,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <option value="Birthday" <?= $event['category'] == 'Birthday' ? 'selected' : ''; ?>>Birthday</option>
                         <option value="Concert" <?= $event['category'] == 'Concert' ? 'selected' : ''; ?>>Concert</option>
                         <option value="Festival" <?= $event['category'] == 'Festival' ? 'selected' : ''; ?>>Festival</option>
+                        <option value="Sports" <?= $event['category'] == 'Sports' ? 'selected' : ''; ?>>Sports</option>
+                        <option value="Shows" <?= $event['category'] == 'Shows' ? 'selected' : ''; ?>>Shows</option>
+                        <option value="Exhibition" <?= $event['category'] == 'Exhibition' ? 'selected' : ''; ?>>Exhibition</option>
+                        <option value="Seminar" <?= $event['category'] == 'Seminar' ? 'selected' : ''; ?>>Seminar</option>
+                        <option value="Anniversary" <?= $event['category'] == 'Anniversary' ? 'selected' : ''; ?>>Anniversary</option>
+                        <option value="Engagement" <?= $event['category'] == 'Engagement' ? 'selected' : ''; ?>>Engagement</option>
+                        <option value="Religious" <?= $event['category'] == 'Religious' ? 'selected' : ''; ?>>Religious</option>
                         <option value="Other" <?= $event['category'] == 'Other' ? 'selected' : ''; ?>>Other</option>
                     </select>
                 </div>

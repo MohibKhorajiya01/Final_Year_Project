@@ -17,9 +17,25 @@ function tableExists(mysqli $conn, string $tableName): bool {
 if (isset($_GET['delete']) && isset($_GET['id'])) {
     $deleteId = (int) $_GET['id'];
     if (tableExists($conn, 'events')) {
-        $conn->query("DELETE FROM events WHERE id = $deleteId");
-        header("Location: manage_events.php?deleted=1");
-        exit();
+        // 1. Delete dependent gallery items
+        if (tableExists($conn, 'gallery_items')) {
+            $conn->query("DELETE FROM gallery_items WHERE event_id = $deleteId");
+        }
+        
+        // 2. Delete dependent bookings
+        if (tableExists($conn, 'bookings')) {
+            $conn->query("DELETE FROM bookings WHERE event_id = $deleteId");
+        }
+
+        // 3. Delete the event
+        if ($conn->query("DELETE FROM events WHERE id = $deleteId")) {
+            header("Location: manage_events.php?deleted=1");
+            exit();
+        } else {
+            $error = urlencode("Database Error: " . $conn->error);
+            header("Location: manage_events.php?error=$error");
+            exit();
+        }
     }
 }
 
@@ -121,6 +137,7 @@ if (tableExists($conn, 'events')) {
         .nav-link-custom:hover {
             background: rgba(90,44,160,0.1);
             color: var(--primary);
+            font-weight: 600;
         }
         .main-content {
             margin-left: 250px;
@@ -236,7 +253,14 @@ if (tableExists($conn, 'events')) {
 
     <?php if (isset($_GET['deleted'])): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ✅ Event deleted successfully!
+            Event deleted successfully!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($_GET['error']); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>

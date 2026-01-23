@@ -232,14 +232,14 @@ if ($managers_result) {
     <!-- Success/Error Messages -->
     <?php if ($success): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ✅ <?= $success ?>
+            <?= $success ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
     
     <?php if ($error): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            ❌ <?= $error ?>
+            <?= $error ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     <?php endif; ?>
@@ -263,6 +263,14 @@ if ($managers_result) {
                         <option value="conference">Conference</option>
                         <option value="concert">Concert</option>
                         <option value="festival">Festival</option>
+                        <option value="sports">Sports</option>
+                        <option value="shows">Shows</option>
+                        <option value="exhibition">Exhibition</option>
+                        <option value="seminar">Seminar</option>
+                        <option value="anniversary">Anniversary</option>
+                        <option value="engagement">Engagement</option>
+                        <option value="religious">Religious</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
             </div>

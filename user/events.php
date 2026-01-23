@@ -19,11 +19,34 @@ $categorySlug = trim($_GET['category'] ?? '');
 $dateRange    = trim($_GET['date_range'] ?? '');
 $sortBy       = trim($_GET['sort'] ?? 'upcoming');
 
+// Fixed list of all categories (same as admin panel)
+$allCategories = [
+    'wedding' => 'Wedding',
+    'corporate' => 'Corporate Event',
+    'birthday' => 'Birthday Party',
+    'conference' => 'Conference',
+    'concert' => 'Concert',
+    'festival' => 'Festival',
+    'sports' => 'Sports',
+    'shows' => 'Shows',
+    'exhibition' => 'Exhibition',
+    'seminar' => 'Seminar',
+    'anniversary' => 'Anniversary',
+    'engagement' => 'Engagement',
+    'religious' => 'Religious',
+    'other' => 'Other'
+];
+
+// Also fetch any additional categories from database that might not be in the fixed list
 if (tableExists($conn, 'events')) {
     $catResult = $conn->query("SELECT DISTINCT category FROM events WHERE category IS NOT NULL AND category <> '' ORDER BY category ASC");
     if ($catResult) {
         while ($row = $catResult->fetch_assoc()) {
-            $categories[] = $row['category'];
+            $cat = $row['category'];
+            $catLower = strtolower($cat);
+            if (!isset($allCategories[$catLower])) {
+                $allCategories[$catLower] = ucfirst($cat);
+            }
         }
     }
 
@@ -32,13 +55,12 @@ if (tableExists($conn, 'events')) {
                FROM events e
                LEFT JOIN bookings b ON e.id = b.event_id
                 WHERE (e.status IS NULL OR e.status NOT IN ('Cancelled', 'Inactive', 'cancelled', 'inactive'))
-               AND (e.event_date >= CURDATE())
-               GROUP BY e.id";
+               AND (e.event_date >= CURDATE())";
     $types  = '';
     $params = [];
 
     if ($searchTerm !== '') {
-        $query .= " AND (title LIKE ? OR description LIKE ? OR location LIKE ?)";
+        $query .= " AND (e.title LIKE ? OR e.description LIKE ? OR e.location LIKE ?)";
         $like = '%' . $searchTerm . '%';
         $types .= 'sss';
         $params[] = $like;
@@ -47,31 +69,34 @@ if (tableExists($conn, 'events')) {
     }
 
     if ($categorySlug !== '') {
-        $query .= " AND category = ?";
+        $query .= " AND LOWER(e.category) = LOWER(?)";
         $types .= 's';
         $params[] = $categorySlug;
     }
 
     if ($dateRange === 'today') {
-        $query .= " AND DATE(event_date) = CURDATE()";
+        $query .= " AND DATE(e.event_date) = CURDATE()";
     } elseif ($dateRange === 'week') {
-        $query .= " AND event_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+        $query .= " AND e.event_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
     } elseif ($dateRange === 'month') {
-        $query .= " AND event_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
+        $query .= " AND e.event_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
     }
+
+    // GROUP BY must come after all WHERE conditions
+    $query .= " GROUP BY e.id";
 
     switch ($sortBy) {
         case 'price_low':
-            $query .= " ORDER BY price ASC";
+            $query .= " ORDER BY e.price ASC";
             break;
         case 'price_high':
-            $query .= " ORDER BY price DESC";
+            $query .= " ORDER BY e.price DESC";
             break;
         case 'recent':
-            $query .= " ORDER BY created_at DESC";
+            $query .= " ORDER BY e.created_at DESC";
             break;
         default:
-            $query .= " ORDER BY event_date ASC";
+            $query .= " ORDER BY e.event_date ASC";
     }
 
     $stmt = $conn->prepare($query);
@@ -148,6 +173,89 @@ if (tableExists($conn, 'events')) {
         .form-select:focus {
             box-shadow: 0 0 0 0.2rem rgba(90,44,160,0.15);
             border-color: var(--primary);
+        }
+        /* Custom Category Dropdown */
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+        .dropdown-selected {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: #fff;
+            border: 1px solid rgba(90,44,160,0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+        .dropdown-selected:hover {
+            border-color: var(--primary);
+        }
+        .dropdown-selected.open {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(90,44,160,0.15);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .dropdown-selected i {
+            transition: transform 0.2s ease;
+        }
+        .dropdown-selected.open i {
+            transform: rotate(180deg);
+        }
+        .dropdown-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid var(--primary);
+            border-top: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 8px 20px rgba(90,44,160,0.15);
+        }
+        .dropdown-options.show {
+            display: block;
+        }
+        .dropdown-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            transition: background 0.15s ease;
+        }
+        .dropdown-option:hover {
+            background: rgba(90,44,160,0.08);
+        }
+        .dropdown-option.selected {
+            background: rgba(90,44,160,0.15);
+            color: var(--primary);
+            font-weight: 500;
+        }
+        .dropdown-option:last-child {
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        /* Scrollbar styling */
+        .dropdown-options::-webkit-scrollbar {
+            width: 6px;
+        }
+        .dropdown-options::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        .dropdown-options::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
         }
         .events-wrapper {
             padding: 40px 20px 60px;
@@ -251,14 +359,21 @@ if (tableExists($conn, 'events')) {
         </div>
         <div class="col-md-4 col-lg-4">
             <label class="form-label">Category</label>
-            <select name="category" class="form-select">
-                <option value="">All categories</option>
-                <?php foreach ($categories as $category): ?>
-                    <option value="<?= htmlspecialchars($category); ?>" <?= $category === $categorySlug ? 'selected' : ''; ?>>
-                        <?= ucfirst(htmlspecialchars($category)); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <input type="hidden" name="category" id="categoryInput" value="<?= htmlspecialchars($categorySlug); ?>">
+            <div class="custom-dropdown">
+                <div class="dropdown-selected" id="dropdownSelected">
+                    <span><?= $categorySlug !== '' && isset($allCategories[strtolower($categorySlug)]) ? htmlspecialchars($allCategories[strtolower($categorySlug)]) : 'All categories'; ?></span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="dropdown-options" id="dropdownOptions">
+                    <div class="dropdown-option <?= $categorySlug === '' ? 'selected' : ''; ?>" data-value="">All categories</div>
+                    <?php foreach ($allCategories as $catKey => $catName): ?>
+                        <div class="dropdown-option <?= strtolower($categorySlug) === $catKey ? 'selected' : ''; ?>" data-value="<?= htmlspecialchars($catKey); ?>">
+                            <?= htmlspecialchars($catName); ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
         </div>
         <div class="col-md-2 col-lg-3 text-end">
             <button type="submit" class="btn btn-register w-100 mt-3 mt-md-0">Search</button>
@@ -322,6 +437,53 @@ if (tableExists($conn, 'events')) {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="assets/js/layout.js?v=2"></script>
+<script>
+// Custom Category Dropdown
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdownSelected = document.getElementById('dropdownSelected');
+    const dropdownOptions = document.getElementById('dropdownOptions');
+    const categoryInput = document.getElementById('categoryInput');
+    
+    if (dropdownSelected && dropdownOptions) {
+        // Toggle dropdown on click
+        dropdownSelected.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownSelected.classList.toggle('open');
+            dropdownOptions.classList.toggle('show');
+        });
+        
+        // Handle option selection
+        dropdownOptions.querySelectorAll('.dropdown-option').forEach(function(option) {
+            option.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                const text = this.textContent.trim();
+                
+                // Update hidden input
+                categoryInput.value = value;
+                
+                // Update displayed text
+                dropdownSelected.querySelector('span').textContent = text;
+                
+                // Update selected state
+                dropdownOptions.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Close dropdown
+                dropdownSelected.classList.remove('open');
+                dropdownOptions.classList.remove('show');
+            });
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!dropdownSelected.contains(e.target) && !dropdownOptions.contains(e.target)) {
+                dropdownSelected.classList.remove('open');
+                dropdownOptions.classList.remove('show');
+            }
+        });
+    }
+});
+</script>
 </body>
 </html>
 

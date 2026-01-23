@@ -110,21 +110,20 @@ if ($event && $eventLoadedFromDb && isset($_SESSION['user_id'])) {
 
 
 $packagePricing = [
-    'basic' => 0,
-    'premium' => 35000,
-    'signature' => 65000
+    'simple' => 3000,
+    'premium' => 5000
 ];
 
 $pickupPricing = [
     'no' => 0,
-    'yes' => 10000  // Fixed price for pickup service
+    'yes' => 4000  // Fixed price for pickup service
 ];
 
 $decorationPricing = [
     'none' => 0,
-    'low' => 15000,
-    'medium' => 35000,
-    'high' => 65000
+    'low' => 5000,
+    'medium' => 10000,
+    'high' => 15000
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -140,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$eventLoadedFromDb) {
             $errorMessage = "Selected event is not bookable. Please choose a real event from the events list.";
         } else {
-            $foodPackage = $_POST['food_package'] ?? 'basic';
+            $foodPackage = $_POST['food_package'] ?? 'simple';
             $pickupService = $_POST['pickup_service'] ?? 'no';
             $pickupAddress = trim($_POST['event_address'] ?? '');
             $fullName = trim($_POST['full_name'] ?? '');
@@ -445,16 +444,15 @@ $imagePath = $event && !empty($event['image_path'])
                 <div class="mb-3">
                     <label class="form-label">Food Package</label>
                     <select name="food_package" class="form-select">
-                        <option value="basic" <?= ($_POST['food_package'] ?? '') === 'basic' ? 'selected' : ''; ?>>Basic Buffet (included)</option>
-                        <option value="premium" <?= ($_POST['food_package'] ?? '') === 'premium' ? 'selected' : ''; ?>>Premium Spread (+₹35,000)</option>
-                        <option value="signature" <?= ($_POST['food_package'] ?? '') === 'signature' ? 'selected' : ''; ?>>Signature Chef Table (+₹65,000)</option>
+                        <option value="simple" <?= ($_POST['food_package'] ?? '') === 'simple' ? 'selected' : ''; ?>>Simple Food (+₹3,000)</option>
+                        <option value="premium" <?= ($_POST['food_package'] ?? '') === 'premium' ? 'selected' : ''; ?>>Premium Food (+₹5,000)</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Pickup Service</label>
                     <select name="pickup_service" id="pickup_service" class="form-select">
                         <option value="no" <?= ($_POST['pickup_service'] ?? '') === 'no' ? 'selected' : ''; ?>>No</option>
-                        <option value="yes" <?= ($_POST['pickup_service'] ?? '') === 'yes' ? 'selected' : ''; ?>>Yes (+₹10,000)</option>
+                        <option value="yes" <?= ($_POST['pickup_service'] ?? '') === 'yes' ? 'selected' : ''; ?>>Yes (+₹4,000)</option>
                     </select>
                 </div>
                 <div class="mb-3" id="pickup_address_container" style="display: <?= (($_POST['pickup_service'] ?? 'no') === 'yes') ? 'block' : 'none'; ?>;">
@@ -474,9 +472,9 @@ $imagePath = $event && !empty($event['image_path'])
                     <label class="form-label">Decoration Package</label>
                     <select name="decoration" class="form-select">
                         <option value="none" <?= ($_POST['decoration'] ?? '') === 'none' ? 'selected' : ''; ?>>No decoration (included)</option>
-                        <option value="low" <?= ($_POST['decoration'] ?? '') === 'low' ? 'selected' : ''; ?>>Low (+₹15,000)</option>
-                        <option value="medium" <?= ($_POST['decoration'] ?? '') === 'medium' ? 'selected' : ''; ?>>Medium (+₹35,000)</option>
-                        <option value="high" <?= ($_POST['decoration'] ?? '') === 'high' ? 'selected' : ''; ?>>High (+₹65,000)</option>
+                        <option value="low" <?= ($_POST['decoration'] ?? '') === 'low' ? 'selected' : ''; ?>>Low (+₹5,000)</option>
+                        <option value="medium" <?= ($_POST['decoration'] ?? '') === 'medium' ? 'selected' : ''; ?>>Medium (+₹10,000)</option>
+                        <option value="high" <?= ($_POST['decoration'] ?? '') === 'high' ? 'selected' : ''; ?>>High (+₹15,000)</option>
                     </select>
                 </div>
                 <div class="action-buttons">
