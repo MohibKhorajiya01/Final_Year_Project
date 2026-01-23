@@ -18,11 +18,9 @@ if (tableExists($conn, 'events')) {
     $stmt = $conn->prepare("
         SELECT COUNT(*) 
         FROM events 
-        WHERE manager_id = ? 
-          AND (LOWER(status) = 'active' OR status = 'Active' OR status = 'active')
+        WHERE (LOWER(status) = 'active' OR status = 'Active' OR status = 'active')
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $stmt->bind_result($liveEventsCount);
             $stmt->fetch();
@@ -38,11 +36,10 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
         SELECT COUNT(*) 
         FROM bookings b 
         JOIN events e ON b.event_id = e.id 
-        WHERE e.manager_id = ? 
-          AND (LOWER(b.status) = 'pending' OR b.status = 'Pending' OR b.status = 'pending')
+        WHERE (LOWER(b.status) = 'pending' OR b.status = 'Pending' OR b.status = 'pending')
+          AND b.payment_status = 'paid'
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $stmt->bind_result($pendingApprovalsCount);
             $stmt->fetch();
@@ -57,11 +54,9 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
     $stmt = $conn->prepare("
         SELECT COUNT(*) 
         FROM bookings b 
-        JOIN events e ON b.event_id = e.id 
-        WHERE e.manager_id = ?
+        JOIN events e ON b.event_id = e.id
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $stmt->bind_result($totalBookingsCount);
             $stmt->fetch();
@@ -78,11 +73,9 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
         SELECT COALESCE(SUM(b.total_amount), 0) as revenue
         FROM bookings b 
         JOIN events e ON b.event_id = e.id 
-        WHERE e.manager_id = ? 
-          AND (LOWER(b.payment_status) = 'paid' OR b.payment_status = 'Paid' OR b.payment_status = 'paid')
+        WHERE (LOWER(b.payment_status) = 'paid' OR b.payment_status = 'Paid' OR b.payment_status = 'paid')
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $stmt->bind_result($totalRevenue);
             $stmt->fetch();
@@ -98,11 +91,9 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
         SELECT COALESCE(SUM(b.total_amount), 0) as pending_amount
         FROM bookings b 
         JOIN events e ON b.event_id = e.id 
-        WHERE e.manager_id = ? 
-          AND (LOWER(b.payment_status) IN ('unpaid', 'pending') OR b.payment_status IN ('Unpaid', 'Pending', 'unpaid', 'pending'))
+        WHERE (LOWER(b.payment_status) IN ('unpaid', 'pending') OR b.payment_status IN ('Unpaid', 'Pending', 'unpaid', 'pending'))
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $stmt->bind_result($pendingRevenue);
             $stmt->fetch();
@@ -118,11 +109,9 @@ if (tableExists($conn, 'feedback') && tableExists($conn, 'bookings') && tableExi
         SELECT COALESCE(AVG(f.rating), 0) as avg_rating
         FROM feedback f 
         JOIN bookings b ON f.booking_id = b.id 
-        JOIN events e ON b.event_id = e.id 
-        WHERE e.manager_id = ?
+        JOIN events e ON b.event_id = e.id
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $stmt->bind_result($averageRating);
             $stmt->fetch();
@@ -137,11 +126,9 @@ $totalEventsCount = 0;
 if (tableExists($conn, 'events')) {
     $stmt = $conn->prepare("
         SELECT COUNT(*) 
-        FROM events 
-        WHERE manager_id = ?
+        FROM events
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $stmt->bind_result($totalEventsCount);
             $stmt->fetch();
@@ -158,12 +145,11 @@ if (tableExists($conn, 'events')) {
     $stmt = $conn->prepare("
         SELECT id, title, event_date, event_time, status, category, location 
         FROM events 
-        WHERE manager_id = ? AND event_date >= CURDATE()
+        WHERE event_date >= CURDATE()
         ORDER BY event_date ASC, event_time ASC
         LIMIT 5
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             while ($row = $result->fetch_assoc()) {
@@ -186,7 +172,7 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
             FROM bookings b
             JOIN events e ON b.event_id = e.id
             LEFT JOIN users u ON b.user_id = u.id
-            WHERE e.manager_id = ?
+            WHERE b.payment_status = 'paid'
             ORDER BY b.created_at DESC
             LIMIT 5
         ");
@@ -197,13 +183,12 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
                    e.title as event_title, e.event_date
             FROM bookings b
             JOIN events e ON b.event_id = e.id
-            WHERE e.manager_id = ?
+            WHERE b.payment_status = 'paid'
             ORDER BY b.created_at DESC
             LIMIT 5
         ");
     }
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             while ($row = $result->fetch_assoc()) {
@@ -229,12 +214,10 @@ if ($checkTable && $checkTable->num_rows > 0) {
         JOIN bookings b ON p.booking_id = b.id
         JOIN events e ON b.event_id = e.id
         LEFT JOIN users u ON p.user_id = u.id
-        WHERE e.manager_id = ?
         ORDER BY p.created_at DESC
         LIMIT 5
     ");
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
@@ -252,15 +235,13 @@ $stmt = $conn->prepare("
         COALESCE(SUM(b.total_amount), 0) as revenue
     FROM bookings b
     JOIN events e ON b.event_id = e.id
-    WHERE e.manager_id = ? 
-      AND LOWER(b.payment_status) = 'paid'
+    WHERE LOWER(b.payment_status) = 'paid'
       AND b.created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
     GROUP BY DATE_FORMAT(b.created_at, '%Y-%m')
     ORDER BY month DESC
     LIMIT 6
 ");
 if ($stmt) {
-    $stmt->bind_param("i", $managerId);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {

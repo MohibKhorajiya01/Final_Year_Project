@@ -17,38 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_booking'])) {
     $bookingId = (int) ($_POST['booking_id'] ?? 0);
     
     if ($bookingId > 0) {
-        // Check if booking belongs to manager's events
-        $checkOwnership = $conn->prepare("
-            SELECT b.id 
-            FROM bookings b 
-            INNER JOIN events e ON b.event_id = e.id 
-            WHERE b.id = ? AND e.manager_id = ? 
-              AND LOWER(b.status) = 'pending'
-            LIMIT 1
-        ");
-        if ($checkOwnership) {
-            $checkOwnership->bind_param("ii", $bookingId, $managerId);
-            $checkOwnership->execute();
-            $checkOwnership->store_result();
-            
-            if ($checkOwnership->num_rows === 1) {
-                $update = $conn->prepare("UPDATE bookings SET status = 'approved' WHERE id = ?");
-                if ($update) {
-                    $update->bind_param("i", $bookingId);
-                    if ($update->execute()) {
-                        $statusMessage = "Booking approved successfully!";
-                        $statusType = 'success';
-                    } else {
-                        $statusMessage = "Failed to approve booking.";
-                        $statusType = 'danger';
-                    }
-                    $update->close();
-                }
+        $update = $conn->prepare("UPDATE bookings SET status = 'approved' WHERE id = ? AND LOWER(status) = 'pending'");
+        if ($update) {
+            $update->bind_param("i", $bookingId);
+            if ($update->execute()) {
+                $statusMessage = "Booking approved successfully!";
+                $statusType = 'success';
             } else {
-                $statusMessage = "You cannot approve this booking.";
+                $statusMessage = "Failed to approve booking.";
                 $statusType = 'danger';
             }
-            $checkOwnership->close();
+            $update->close();
         }
     }
 }
@@ -58,37 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reject_booking'])) {
     $bookingId = (int) ($_POST['booking_id'] ?? 0);
     
     if ($bookingId > 0) {
-        // Check if booking belongs to manager's events
-        $checkOwnership = $conn->prepare("
-            SELECT b.id 
-            FROM bookings b 
-            INNER JOIN events e ON b.event_id = e.id 
-            WHERE b.id = ? AND e.manager_id = ?
-            LIMIT 1
-        ");
-        if ($checkOwnership) {
-            $checkOwnership->bind_param("ii", $bookingId, $managerId);
-            $checkOwnership->execute();
-            $checkOwnership->store_result();
-            
-            if ($checkOwnership->num_rows === 1) {
-                $update = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?");
-                if ($update) {
-                    $update->bind_param("i", $bookingId);
-                    if ($update->execute()) {
-                        $statusMessage = "Booking rejected successfully.";
-                        $statusType = 'warning';
-                    } else {
-                        $statusMessage = "Failed to reject booking.";
-                        $statusType = 'danger';
-                    }
-                    $update->close();
-                }
+        $update = $conn->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?");
+        if ($update) {
+            $update->bind_param("i", $bookingId);
+            if ($update->execute()) {
+                $statusMessage = "Booking rejected successfully.";
+                $statusType = 'warning';
             } else {
-                $statusMessage = "You cannot reject this booking.";
+                $statusMessage = "Failed to reject booking.";
                 $statusType = 'danger';
             }
-            $checkOwnership->close();
+            $update->close();
         }
     }
 }
@@ -108,21 +67,15 @@ if ($bookingTableExists && $eventsTableExists && $usersTableExists) {
         FROM bookings b
         INNER JOIN users u ON b.user_id = u.id
         INNER JOIN events e ON b.event_id = e.id
-        WHERE e.manager_id = ? 
-          AND LOWER(b.status) = 'pending'
-          AND LOWER(b.payment_status) = 'paid'
+        WHERE LOWER(b.status) = 'pending' AND b.payment_status = 'paid'
         ORDER BY b.created_at DESC
     ";
     
-    $stmt = $conn->prepare($query);
-    if ($stmt) {
-        $stmt->bind_param("i", $managerId);
-        $stmt->execute();
-        $result = $stmt->get_result();
+    $result = $conn->query($query);
+    if ($result) {
         while ($row = $result->fetch_assoc()) {
             $bookings[] = $row;
         }
-        $stmt->close();
     }
 }
 ?>

@@ -28,7 +28,7 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
             FROM bookings b
             INNER JOIN events e ON b.event_id = e.id
             LEFT JOIN users u ON b.user_id = u.id
-            WHERE e.manager_id = ?
+            WHERE b.payment_status = 'paid'
         ";
     } else {
         $query = "
@@ -36,12 +36,12 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
                    e.title AS event_title, e.event_date, e.manager_id
             FROM bookings b
             INNER JOIN events e ON b.event_id = e.id
-            WHERE e.manager_id = ?
+            WHERE b.payment_status = 'paid'
         ";
     }
     
-    $types = "i";
-    $params = [$managerId];
+    $types = "";
+    $params = [];
 
     if ($paymentFilter !== '' && in_array($paymentFilter, $paymentStatuses, true)) {
         $query .= " AND b.payment_status = ?";
@@ -68,7 +68,9 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
 
     $stmt = $conn->prepare($query);
     if ($stmt) {
-        $stmt->bind_param($types, ...$params);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             while ($row = $result->fetch_assoc()) {

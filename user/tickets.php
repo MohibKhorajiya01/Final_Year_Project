@@ -352,6 +352,13 @@ function viewTicket(booking) {
         addonsContent.innerHTML += `<div class="mb-1" style="font-size: 12px;"><span class="text-muted">Deco:</span> <strong>${addons.decoration}</strong></div>`;
         hasAddons = true;
     }
+    if (addons.selected_dynamic_addons && Array.isArray(addons.selected_dynamic_addons)) {
+        addons.selected_dynamic_addons.forEach(da => {
+            addonsContent.innerHTML += `<div class="mb-1" style="font-size: 12px;"><span class="text-muted">Service:</span> <strong>${da.title}</strong></div>`;
+            hasAddons = true;
+        });
+    }
+
 
     addonsContainer.style.display = hasAddons ? 'block' : 'none';
 

@@ -110,10 +110,10 @@ if ($hasGalleryTable && $hasEventsTable) {
         SELECT g.*, e.title AS event_title, DATE_FORMAT(g.created_at, '%d %b %Y') AS created_label
         FROM gallery_items g
         LEFT JOIN events e ON g.event_id = e.id
-        WHERE e.manager_id = ?
+        WHERE 1=1
     ";
-    $types = "i";
-    $params = [$managerId];
+    $types = "";
+    $params = [];
 
     if ($search !== '') {
         $query .= " AND (g.title LIKE CONCAT('%', ?, '%') OR g.description LIKE CONCAT('%', ?, '%'))";
@@ -134,7 +134,9 @@ if ($hasGalleryTable && $hasEventsTable) {
     $query .= " ORDER BY g.created_at DESC";
     $stmt = $conn->prepare($query);
     if ($stmt) {
-        $stmt->bind_param($types, ...$params);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             while ($row = $result->fetch_assoc()) {
@@ -147,12 +149,10 @@ if ($hasGalleryTable && $hasEventsTable) {
     $query = "
         SELECT g.*, DATE_FORMAT(g.created_at, '%d %b %Y') AS created_label
         FROM gallery_items g
-        WHERE g.created_by = ?
         ORDER BY g.created_at DESC
     ";
     $stmt = $conn->prepare($query);
     if ($stmt) {
-        $stmt->bind_param("i", $managerId);
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             while ($row = $result->fetch_assoc()) {
@@ -169,9 +169,8 @@ if ($hasGalleryTable && $hasEventsTable) {
 
 $eventsOptions = [];
 if ($hasEventsTable) {
-    $stmtEvents = $conn->prepare("SELECT id, title FROM events WHERE manager_id = ? ORDER BY title");
+    $stmtEvents = $conn->prepare("SELECT id, title FROM events ORDER BY title");
     if ($stmtEvents) {
-        $stmtEvents->bind_param("i", $managerId);
         if ($stmtEvents->execute()) {
             $resultEvents = $stmtEvents->get_result();
             while ($row = $resultEvents->fetch_assoc()) {
@@ -401,11 +400,10 @@ if ($hasEventsTable) {
                 <input type="text" name="title" class="form-control" placeholder="Sangeet Sneak Peek" required>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Link Event <span class="required-star">*</span></label>
-                <select name="event_id" class="form-select" <?= empty($eventsOptions) ? 'disabled' : ''; ?> required>
-                    <?php if (empty($eventsOptions)): ?>
-                        <option value="">No events assigned</option>
-                    <?php else: ?>
+                <label class="form-label">Link Event</label>
+                <select name="event_id" class="form-select" <?= empty($eventsOptions) ? 'disabled' : ''; ?>>
+                    <option value="">None / Other</option>
+                    <?php if (!empty($eventsOptions)): ?>
                         <?php foreach ($eventsOptions as $event): ?>
                             <option value="<?= $event['id']; ?>"><?= htmlspecialchars($event['title']); ?></option>
                         <?php endforeach; ?>

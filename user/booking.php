@@ -107,7 +107,19 @@ if ($event && $eventLoadedFromDb && isset($_SESSION['user_id'])) {
     }
 }
 
-
+// --- Fetch Dynamic Add-ons ---
+$dynamicAddons = [];
+if (tableExists($conn, 'addons')) {
+    $addonStmt = $conn->prepare("SELECT id, title, category, type, price, description FROM addons WHERE status = 'active'");
+    if ($addonStmt) {
+        $addonStmt->execute();
+        $addonResult = $addonStmt->get_result();
+        while ($row = $addonResult->fetch_assoc()) {
+            $dynamicAddons[] = $row;
+        }
+        $addonStmt->close();
+    }
+}
 
 $packagePricing = [
     'simple' => 3000,
@@ -180,7 +192,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pickupCost = $pickupPricing[$pickupService] ?? 0;
                 $decorationCost = $decorationPricing[$decoration] ?? 0;
                 $basePrice = (float) ($event['price'] ?? 0);
-                $totalAmount = $basePrice + $packageCost + $pickupCost + $decorationCost;
+                
+                // Calculate Dynamic Add-ons Cost
+                $selectedAddonIds = $_POST['dynamic_addons'] ?? [];
+                $dynamicAddonsCost = 0;
+                $selectedAddonsDetails = [];
+                
+                if (!empty($selectedAddonIds)) {
+                    foreach ($dynamicAddons as $da) {
+                        if (in_array((string)$da['id'], $selectedAddonIds)) {
+                            $dynamicAddonsCost += (float)$da['price'];
+                            $selectedAddonsDetails[] = [
+                                'id' => $da['id'],
+                                'title' => $da['title'],
+                                'price' => $da['price']
+                            ];
+                        }
+                    }
+                }
+
+                $totalAmount = $basePrice + $packageCost + $pickupCost + $decorationCost + $dynamicAddonsCost;
 
                 $bookingCode = 'EV' . strtoupper(substr(uniqid(), -6));
                 $metaPayload = [
@@ -190,6 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'decoration' => $decoration,
                     'decoration_cost' => $decorationCost,
                     'selected_location' => $selected_location,
+                    'selected_dynamic_addons' => $selectedAddonsDetails,
                     'guest_notes' => $fullName . ' | ' . $email
                 ];
 
@@ -301,72 +333,113 @@ $imagePath = $event && !empty($event['image_path'])
         }
         .registration-card {
             width: 100%;
-            max-width: 420px;
-            background: #fff;
-            border-radius: 28px;
-            padding: 30px;
-            box-shadow: 0 20px 45px rgba(90,44,160,0.12);
-            border: 1px solid rgba(90,44,160,0.08);
+            max-width: 580px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(90,44,160,0.08), 0 0 1px rgba(90,44,160,0.1);
+            border: none;
         }
         .registration-card h2 {
             margin-bottom: 20px;
             color: var(--primary-dark);
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            position: relative;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #9e9e9e;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 6px;
+            font-weight: 700;
+        }
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #444;
         }
         .form-control,
         .form-select {
-            border-radius: 14px;
-            border: 1px solid rgba(90,44,160,0.2);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+            background-color: #f8fafc;
         }
         .form-control:focus,
         .form-select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(90,44,160,0.15);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(90,44,160,0.1);
+            outline: none;
         }
         .action-buttons {
             display: flex;
             justify-content: space-between;
-            gap: 12px;
-            margin-top: 25px;
+            gap: 15px;
+            margin-top: 24px;
+        }
+        .btn-cancel, .btn-confirm {
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
         .btn-cancel {
-            flex: 1;
-            border-radius: 14px;
-            border: 1px solid rgba(90,44,160,0.2);
-            background: transparent;
-            color: var(--primary-dark);
-            padding: 12px;
+            background: #f1f5f9;
+            border: none;
+            color: #64748b;
+        }
+        .btn-cancel:hover {
+            background: #e2e8f0;
+            color: #475569;
         }
         .btn-confirm {
-            flex: 1;
-            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             border: none;
-            background: var(--primary);
             color: #fff;
-            padding: 12px;
-            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(90,44,160,0.25);
+        }
+        .btn-confirm:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(90,44,160,0.3);
         }
         .event-mini {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
             padding: 12px;
             border-radius: 16px;
-            background: rgba(90,44,160,0.05);
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(90,44,160,0.08) 0%, rgba(90,44,160,0.03) 100%);
+            margin-bottom: 24px;
+            border: 1px solid rgba(90,44,160,0.05);
         }
         .event-mini img {
-            width: 60px;
-            height: 60px;
+            width: 54px;
+            height: 54px;
             object-fit: cover;
-            border-radius: 14px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .event-mini strong {
+            font-size: 1rem;
+            color: var(--primary-dark);
+            display: block;
         }
         .event-mini span {
             display: block;
-            font-size: 13px;
-            color: #6f6f6f;
+            font-size: 12px;
+            color: #888;
+            font-weight: 500;
         }
-
-
     </style>
 </head>
 <body>
@@ -409,74 +482,104 @@ $imagePath = $event && !empty($event['image_path'])
                 </div>
             </div>
 
-            <h2>Registration</h2>
+             <div class="registration-header d-flex justify-content-between align-items-center mb-4">
+                <h2 class="m-0">Event Registration</h2>
+                <div class="badge rounded-pill" style="background: rgba(90,44,160,0.1); color: var(--primary); font-size: 0.75rem; padding: 6px 12px;">Booking Step 1/2</div>
+             </div>
+
             <form method="POST" novalidate>
                 <input type="hidden" name="event_id" value="<?= htmlspecialchars($eventKey); ?>">
                 
-                <div class="mb-3">
-                    <label class="form-label">Select Event Location <span class="required-star">*</span></label>
-                    <select name="selected_location" class="form-select" required>
-                        <option value="" disabled <?= !isset($_POST['selected_location']) ? 'selected' : ''; ?>>Choose a location...</option>
-                        <?php
-                        $rawLocations = $event['available_locations'] ?? '';
-                        $locationOptions = array_filter(array_map('trim', explode('|', $rawLocations)));
+                <div class="section-title">Event & Logistics</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Location <span class="required-star">*</span></label>
+                        <select name="selected_location" class="form-select" required>
+                            <option value="" disabled <?= !isset($_POST['selected_location']) ? 'selected' : ''; ?>>Choose venue...</option>
+                            <?php
+                            $rawLocations = $event['available_locations'] ?? '';
+                            $locationOptions = array_filter(array_map('trim', explode('|', $rawLocations)));
+                            foreach ($locationOptions as $option):
+                                if (empty($option)) continue;
+                                $isSelected = ($_POST['selected_location'] ?? '') === $option;
+                            ?>
+                                <option value="<?= htmlspecialchars($option); ?>" <?= $isSelected ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars($option); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Event Date <span class="required-star">*</span></label>
+                        <input type="date" name="preferred_date" class="form-control" required 
+                               min="<?= date('Y-m-d'); ?>" 
+                               max="<?= htmlspecialchars($event['event_date']); ?>"
+                               value="<?= htmlspecialchars($_POST['preferred_date'] ?? ''); ?>">
+                    </div>
+                </div>
 
-                        foreach ($locationOptions as $option):
-                            if (empty($option)) continue;
-                            $isSelected = ($_POST['selected_location'] ?? '') === $option;
-                        ?>
-                            <option value="<?= htmlspecialchars($option); ?>" <?= $isSelected ? 'selected' : ''; ?>>
-                                <?= htmlspecialchars($option); ?>
-                            </option>
+                <div class="section-title">Packages & Services</div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Food</label>
+                        <select name="food_package" class="form-select">
+                            <option value="simple" <?= ($_POST['food_package'] ?? '') === 'simple' ? 'selected' : ''; ?>>Simple (+₹3k)</option>
+                            <option value="premium" <?= ($_POST['food_package'] ?? '') === 'premium' ? 'selected' : ''; ?>>Premium (+₹5k)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Decoration</label>
+                        <select name="decoration" class="form-select">
+                            <option value="none" <?= ($_POST['decoration'] ?? '') === 'none' ? 'selected' : ''; ?>>None (₹0)</option>
+                            <option value="low" <?= ($_POST['decoration'] ?? '') === 'low' ? 'selected' : ''; ?>>Low (+₹5k)</option>
+                            <option value="medium" <?= ($_POST['decoration'] ?? '') === 'medium' ? 'selected' : ''; ?>>Mid (+₹10k)</option>
+                            <option value="high" <?= ($_POST['decoration'] ?? '') === 'high' ? 'selected' : ''; ?>>High (+₹15k)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Pickup</label>
+                        <select name="pickup_service" id="pickup_service" class="form-select">
+                            <option value="no" <?= ($_POST['pickup_service'] ?? '') === 'no' ? 'selected' : ''; ?>>No</option>
+                            <option value="yes" <?= ($_POST['pickup_service'] ?? '') === 'yes' ? 'selected' : ''; ?>>Yes (+₹4k)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4" id="pickup_address_container" style="display: <?= (($_POST['pickup_service'] ?? 'no') === 'yes') ? 'block' : 'none'; ?>;">
+                    <label class="form-label">Pickup Location Details <span class="required-star">*</span></label>
+                    <textarea name="event_address" id="event_address" rows="2" class="form-control" placeholder="Provide full address for pickup service..." <?= (($_POST['pickup_service'] ?? 'no') === 'yes') ? 'required' : ''; ?>><?= htmlspecialchars($_POST['event_address'] ?? ''); ?></textarea>
+                </div>
+
+                <div class="section-title">Client Information</div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="full_name" class="form-control" value="<?= htmlspecialchars($_POST['full_name'] ?? ''); ?>" placeholder="Enter your name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" id="email" class="form-control" value="<?= htmlspecialchars($userEmail); ?>" readonly style="background-color: #f1f5f9; cursor: not-allowed; color: #64748b;">
+                    </div>
+                </div>
+
+                <?php if (!empty($dynamicAddons)): ?>
+                    <div class="section-title">Optional Add-ons</div>
+                    <div class="mb-4 p-3 border rounded-4 bg-light" style="max-height: 120px; overflow-y: auto; border: 1px dashed rgba(90,44,160,0.2) !important;">
+                        <?php foreach ($dynamicAddons as $addon): ?>
+                            <div class="form-check mb-2" style="font-size: 0.88rem;">
+                                <input class="form-check-input" type="checkbox" name="dynamic_addons[]" 
+                                       id="addon_<?= $addon['id']; ?>" 
+                                       value="<?= (int)$addon['id']; ?>"
+                                       <?= (isset($_POST['dynamic_addons']) && in_array((string)$addon['id'], $_POST['dynamic_addons'])) ? 'checked' : ''; ?>>
+                                <label class="form-check-label d-flex justify-content-between align-items-center w-100" for="addon_<?= $addon['id']; ?>">
+                                    <span class="fw-500"><?= htmlspecialchars($addon['title']); ?></span>
+                                    <span class="text-primary fw-bold">+₹<?= number_format($addon['price'], 0); ?></span>
+                                </label>
+                            </div>
                         <?php endforeach; ?>
-                    </select>
-                </div>
+                    </div>
+                <?php endif; ?>
 
-                <div class="mb-3">
-                    <label class="form-label">Select Your Date <span class="required-star">*</span></label>
-                    <input type="date" name="preferred_date" class="form-control" required 
-                           min="<?= date('Y-m-d'); ?>" 
-                           max="<?= htmlspecialchars($event['event_date']); ?>"
-                           value="<?= htmlspecialchars($_POST['preferred_date'] ?? ''); ?>">
-                    <small class="text-muted">Available until <?= date('d M Y', strtotime($event['event_date'])); ?></small>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Food Package</label>
-                    <select name="food_package" class="form-select">
-                        <option value="simple" <?= ($_POST['food_package'] ?? '') === 'simple' ? 'selected' : ''; ?>>Simple Food (+₹3,000)</option>
-                        <option value="premium" <?= ($_POST['food_package'] ?? '') === 'premium' ? 'selected' : ''; ?>>Premium Food (+₹5,000)</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Pickup Service</label>
-                    <select name="pickup_service" id="pickup_service" class="form-select">
-                        <option value="no" <?= ($_POST['pickup_service'] ?? '') === 'no' ? 'selected' : ''; ?>>No</option>
-                        <option value="yes" <?= ($_POST['pickup_service'] ?? '') === 'yes' ? 'selected' : ''; ?>>Yes (+₹4,000)</option>
-                    </select>
-                </div>
-                <div class="mb-3" id="pickup_address_container" style="display: <?= (($_POST['pickup_service'] ?? 'no') === 'yes') ? 'block' : 'none'; ?>;">
-                    <label class="form-label">Pickup Address <span class="required-star">*</span></label>
-                    <textarea name="event_address" id="event_address" rows="2" class="form-control" placeholder="Enter your pickup address" <?= (($_POST['pickup_service'] ?? 'no') === 'yes') ? 'required' : ''; ?>><?= htmlspecialchars($_POST['event_address'] ?? ''); ?></textarea>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Enter your name</label>
-                    <input type="text" name="full_name" class="form-control" value="<?= htmlspecialchars($_POST['full_name'] ?? ''); ?>" placeholder="Your full name">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email ID <span class="required-star">*</span></label>
-                    <input type="email" name="email" id="email" class="form-control" value="<?= htmlspecialchars($userEmail); ?>" placeholder="you@example.com" pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" required readonly style="background-color: #f0f0f0; cursor: not-allowed;">
-                    <small class="text-muted">This is your registered email address</small>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Decoration Package</label>
-                    <select name="decoration" class="form-select">
-                        <option value="none" <?= ($_POST['decoration'] ?? '') === 'none' ? 'selected' : ''; ?>>No decoration (included)</option>
-                        <option value="low" <?= ($_POST['decoration'] ?? '') === 'low' ? 'selected' : ''; ?>>Low (+₹5,000)</option>
-                        <option value="medium" <?= ($_POST['decoration'] ?? '') === 'medium' ? 'selected' : ''; ?>>Medium (+₹10,000)</option>
-                        <option value="high" <?= ($_POST['decoration'] ?? '') === 'high' ? 'selected' : ''; ?>>High (+₹15,000)</option>
-                    </select>
-                </div>
                 <div class="action-buttons">
                     <a href="events.php" class="btn btn-cancel text-center">Cancel</a>
                     <button type="submit" class="btn btn-confirm">Confirm</button>
@@ -495,7 +598,7 @@ $imagePath = $event && !empty($event['image_path'])
         const eventAddress = document.getElementById('event_address');
         
         function togglePickupAddress() {
-            if (pickupService.value === 'yes') {
+            if (pickupService && pickupService.value === 'yes') {
                 pickupAddressContainer.style.display = 'block';
                 eventAddress.setAttribute('required', 'required');
             } else {

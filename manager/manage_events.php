@@ -8,9 +8,9 @@ if (isset($_GET['delete']) && isset($_GET['id'])) {
     $eventId = (int) $_GET['id'];
     
     // Check if event belongs to this manager
-    $checkStmt = $conn->prepare("SELECT id FROM events WHERE id = ? AND manager_id = ?");
+    $checkStmt = $conn->prepare("SELECT id FROM events WHERE id = ?");
     if ($checkStmt) {
-        $checkStmt->bind_param("ii", $eventId, $managerId);
+        $checkStmt->bind_param("i", $eventId);
         $checkStmt->execute();
         $result = $checkStmt->get_result();
         
@@ -28,9 +28,9 @@ if (isset($_GET['delete']) && isset($_GET['id'])) {
                     $_SESSION['msg_error'] = "Cannot delete event. It has " . $bookingRow['count'] . " booking(s). Please cancel bookings first.";
                 } else {
                     // Delete event
-                    $deleteStmt = $conn->prepare("DELETE FROM events WHERE id = ? AND manager_id = ?");
+                    $deleteStmt = $conn->prepare("DELETE FROM events WHERE id = ?");
                     if ($deleteStmt) {
-                        $deleteStmt->bind_param("ii", $eventId, $managerId);
+                        $deleteStmt->bind_param("i", $eventId);
                         if ($deleteStmt->execute()) {
                             $_SESSION['msg_success'] = "Event deleted successfully!";
                         } else {
@@ -54,9 +54,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['event_id'], $_POST['s
     $eventId = (int) $_POST['event_id'];
     $newStatus = trim($_POST['status']);
     
-    $updateStmt = $conn->prepare("UPDATE events SET status = ? WHERE id = ? AND manager_id = ?");
+    $updateStmt = $conn->prepare("UPDATE events SET status = ? WHERE id = ?");
     if ($updateStmt) {
-        $updateStmt->bind_param("sii", $newStatus, $eventId, $managerId);
+        $updateStmt->bind_param("si", $newStatus, $eventId);
         if ($updateStmt->execute()) {
             $_SESSION['msg_success'] = "Status updated successfully!";
         } else {
@@ -96,13 +96,11 @@ $query = "SELECT e.id, e.title, e.category, e.event_date, e.location, e.price, e
           COUNT(b.id) as booking_count
           FROM events e
           LEFT JOIN bookings b ON e.id = b.event_id
-          WHERE e.manager_id = ?
           GROUP BY e.id
           ORDER BY e.created_at DESC";
 
 $stmt = $conn->prepare($query);
 if ($stmt) {
-    $stmt->bind_param("i", $managerId);
     $stmt->execute();
     $result = $stmt->get_result();
     

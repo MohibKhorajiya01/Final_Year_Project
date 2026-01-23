@@ -14,8 +14,8 @@ $success = "";
 $error = "";
 
 // Fetch existing event details
-$stmt = $conn->prepare("SELECT * FROM events WHERE id = ? AND manager_id = ?");
-$stmt->bind_param("ii", $eventId, $managerId);
+$stmt = $conn->prepare("SELECT * FROM events WHERE id = ?");
+$stmt->bind_param("i", $eventId);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -66,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($error)) {
-        $updateStmt = $conn->prepare("UPDATE events SET title=?, description=?, category=?, event_date=?, location=?, available_locations=?, price=?, image_path=? WHERE id=? AND manager_id=?");
-        $updateStmt->bind_param("ssssssdsii", $title, $description, $category, $event_date, $location, $available_locations, $price, $image_path, $eventId, $managerId);
+        $updateStmt = $conn->prepare("UPDATE events SET title=?, description=?, category=?, event_date=?, location=?, available_locations=?, price=?, image_path=? WHERE id=?");
+        $updateStmt->bind_param("ssssssdsi", $title, $description, $category, $event_date, $location, $available_locations, $price, $image_path, $eventId);
         
         if ($updateStmt->execute()) {
             $success = "Event updated successfully!";
@@ -76,7 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $event['description'] = $description;
             $event['category'] = $category;
             $event['event_date'] = $event_date;
-            $event['end_date'] = $end_date;
             $event['location'] = $location;
             $event['available_locations'] = $available_locations;
             $event['price'] = $price;
@@ -278,10 +277,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-label">Category <span class="required-star">*</span></label>
                     <select name="category" class="form-select" required>
                         <option value="Wedding" <?= $event['category'] == 'Wedding' ? 'selected' : ''; ?>>Wedding</option>
-                        <option value="Corporate" <?= $event['category'] == 'Corporate' ? 'selected' : ''; ?>>Corporate</option>
-                        <option value="Birthday" <?= $event['category'] == 'Birthday' ? 'selected' : ''; ?>>Birthday</option>
+                        <option value="Corporate" <?= $event['category'] == 'Corporate' ? 'selected' : ''; ?>>Corporate Event</option>
+                        <option value="Birthday" <?= $event['category'] == 'Birthday' ? 'selected' : ''; ?>>Birthday Party</option>
+                        <option value="Conference" <?= $event['category'] == 'Conference' ? 'selected' : ''; ?>>Conference</option>
                         <option value="Concert" <?= $event['category'] == 'Concert' ? 'selected' : ''; ?>>Concert</option>
                         <option value="Festival" <?= $event['category'] == 'Festival' ? 'selected' : ''; ?>>Festival</option>
+                        <option value="Sports" <?= $event['category'] == 'Sports' ? 'selected' : ''; ?>>Sports</option>
+                        <option value="Shows" <?= $event['category'] == 'Shows' ? 'selected' : ''; ?>>Shows</option>
+                        <option value="Exhibition" <?= $event['category'] == 'Exhibition' ? 'selected' : ''; ?>>Exhibition</option>
+                        <option value="Seminar" <?= $event['category'] == 'Seminar' ? 'selected' : ''; ?>>Seminar</option>
+                        <option value="Anniversary" <?= $event['category'] == 'Anniversary' ? 'selected' : ''; ?>>Anniversary</option>
+                        <option value="Engagement" <?= $event['category'] == 'Engagement' ? 'selected' : ''; ?>>Engagement</option>
+                        <option value="Religious" <?= $event['category'] == 'Religious' ? 'selected' : ''; ?>>Religious</option>
                         <option value="Other" <?= $event['category'] == 'Other' ? 'selected' : ''; ?>>Other</option>
                     </select>
                 </div>

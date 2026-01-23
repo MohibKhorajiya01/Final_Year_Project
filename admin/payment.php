@@ -56,7 +56,7 @@ if (tableExists($conn, 'bookings') && tableExists($conn, 'events')) {
               INNER JOIN ($latestBookingPerEvent) lb ON lb.latest_id = b.id
               LEFT JOIN users u ON b.user_id = u.id
               LEFT JOIN events e ON b.event_id = e.id
-              WHERE 1=1";
+              WHERE b.payment_status = 'paid'";
     
     if ($search) {
         $searchSafe = $conn->real_escape_string($search);

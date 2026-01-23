@@ -23,14 +23,13 @@ $eventsQuery = "
     FROM events e
     LEFT JOIN bookings b ON e.id = b.event_id
     LEFT JOIN feedback f ON b.id = f.booking_id
-    WHERE e.manager_id = ?
+    WHERE 1=1
     GROUP BY e.id
     ORDER BY e.event_date DESC
 ";
 
 $events = [];
 if ($stmt = $conn->prepare($eventsQuery)) {
-    $stmt->bind_param("i", $managerId);
     $stmt->execute();
     $result = $stmt->get_result();
     while ($row = $result->fetch_assoc()) {
@@ -54,12 +53,12 @@ if ($selectedEventId) {
         INNER JOIN bookings b ON f.booking_id = b.id
         INNER JOIN events e ON b.event_id = e.id
         LEFT JOIN users u ON f.user_id = u.id
-        WHERE e.id = ? AND e.manager_id = ?
+        WHERE e.id = ?
         ORDER BY f.created_at DESC
     ";
     
     if ($stmt = $conn->prepare($feedbackQuery)) {
-        $stmt->bind_param("ii", $selectedEventId, $managerId);
+        $stmt->bind_param("i", $selectedEventId);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {

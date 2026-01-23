@@ -26,37 +26,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_id']) && $boo
         $statusMessage = "Invalid status selection.";
         $statusType = "danger";
     } else {
-        $ownership = $conn->prepare("
-            SELECT b.id 
-            FROM bookings b 
-            INNER JOIN events e ON b.event_id = e.id 
-            WHERE b.id = ? AND e.manager_id = ?
-            LIMIT 1
-        ");
-        if ($ownership) {
-            $ownership->bind_param("ii", $bookingId, $managerId);
-            $ownership->execute();
-            $ownership->store_result();
-            if ($ownership->num_rows === 1) {
-                $update = $conn->prepare("UPDATE bookings SET status = ?, payment_status = ? WHERE id = ?");
-                if ($update) {
-                    $update->bind_param("ssi", $newStatus, $newPayment, $bookingId);
-                    if ($update->execute()) {
-                        $statusMessage = "Booking updated successfully.";
-                    } else {
-                        $statusMessage = "Unable to update booking.";
-                        $statusType = "warning";
-                    }
-                    $update->close();
-                } else {
-                    $statusMessage = "Failed to prepare update statement.";
-                    $statusType = "danger";
-                }
+        $update = $conn->prepare("UPDATE bookings SET status = ?, payment_status = ? WHERE id = ?");
+        if ($update) {
+            $update->bind_param("ssi", $newStatus, $newPayment, $bookingId);
+            if ($update->execute()) {
+                $statusMessage = "Booking updated successfully.";
             } else {
-                $statusMessage = "You cannot update this booking.";
-                $statusType = "danger";
+                $statusMessage = "Unable to update booking.";
+                $statusType = "warning";
             }
-            $ownership->close();
+            $update->close();
+        } else {
+            $statusMessage = "Failed to prepare update statement.";
+            $statusType = "danger";
         }
     }
 }
@@ -74,10 +56,10 @@ if ($bookingTableExists && $eventsTableExists) {
         FROM bookings b
         INNER JOIN events e ON b.event_id = e.id
         LEFT JOIN users u ON b.user_id = u.id
-        WHERE e.manager_id = ?
+        WHERE b.payment_status = 'paid'
     ";
-    $types = "i";
-    $params = [$managerId];
+    $types = "";
+    $params = [];
 
     if ($search !== '') {
         $query .= " AND (b.booking_code LIKE CONCAT('%', ?, '%') OR u.name LIKE CONCAT('%', ?, '%') OR e.title LIKE CONCAT('%', ?, '%'))";
@@ -103,7 +85,9 @@ if ($bookingTableExists && $eventsTableExists) {
 
     $stmt = $conn->prepare($query);
     if ($stmt) {
-        $stmt->bind_param($types, ...$params);
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             while ($row = $result->fetch_assoc()) {

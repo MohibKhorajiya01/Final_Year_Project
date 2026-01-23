@@ -12,7 +12,7 @@ if ($conn && $isLoggedIn) {
         SELECT b.*, e.title as event_title, e.image_path, e.location, e.event_date as original_event_date
         FROM bookings b
         LEFT JOIN events e ON b.event_id = e.id
-        WHERE b.user_id = ?
+        WHERE b.user_id = ? AND b.payment_status = 'paid'
         ORDER BY b.created_at DESC
     ");
     
