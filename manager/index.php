@@ -360,6 +360,12 @@ if ($stmt) {
         }
         .summary-grid {
             display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-grid-bottom {
+            display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
@@ -420,6 +426,12 @@ if ($stmt) {
                 width: 100%;
                 height: auto;
             }
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .summary-grid-bottom {
+                grid-template-columns: 1fr;
+            }
             .main-content {
                 margin-left: 0;
                 padding: 20px;
@@ -476,6 +488,9 @@ if ($stmt) {
             <h3><?= str_pad($pendingApprovalsCount, 2, '0', STR_PAD_LEFT); ?></h3>
             <small>Bookings awaiting action</small>
         </div>
+    </section>
+
+    <section class="summary-grid-bottom">
         <div class="summary-card">
             <span>Total Bookings</span>
             <h3><?= str_pad($totalBookingsCount, 2, '0', STR_PAD_LEFT); ?></h3>
